@@ -20,17 +20,20 @@ M = I + dt * A                   # forecasting matrix
 
 
 # generate numerical solution and plot
-times = [0 + k * dt for k in range(12*T+1)]
+# to illustrate dampening, stack n plots of width T
+n = 30
+times = [0 + k * dt for k in range(n*T+1)]
 true_xs = [x0]
-for k in range(12*T):
+for k in range(n*T):
     true_xs += [M @ true_xs[-1]]
 true_zs = [x[0] for x in true_xs]
 true_zts = [x[1] for x in true_xs]
+
+plt.figure(figsize=(60, 5))
 plt.scatter(times, true_zs, s=1, c=(0, 0, 1))
 plt.scatter(times, true_zts, s=1, c=(1, 0, 0))
 plt.legend(['z', 'dz/dt'], markerscale=4)
 plt.show()
-plt.figure(figsize=(50, 30))
 
 
 # time interval was long to illustrate dampening; cut back
@@ -42,6 +45,8 @@ true_zts = true_zts[:T+1]
 
 # generate synthetic data and plot
 synth_ys = [H @ x + np.random.normal(0, np.sqrt(R)) for x in true_xs]
+
+plt.figure(figsize=(8, 8))
 plt.scatter(times, synth_ys, s=1, c=(0, 1, 0))
 plt.scatter(times, true_zs, s=1, c=(0, 0, 1))
 plt.legend(['Synthetic z', 'True z'], markerscale=4)
@@ -49,32 +54,40 @@ plt.show()
 
 
 # kalman filter
-kalman_mus = [[0,0]]
+kalman_mus = [[0, 0]]
 kalman_Ps = [I]
 kalman_gains = []
 for k in range(T):
+    # get previous analysis mean and covariance
     mu_last = kalman_mus[-1]
     P_last = kalman_Ps[-1]
 
+    # forecasting step
     mu_f = M @ mu_last
     P_f = A @ P_last @ A.T
     K = P_f @ H.T @ np.linalg.inv(R + H @ P_f @ H.T)
     kalman_gains += [K]
 
+    # form new analysis mean and covariance and append to list
     new_mu = mu_f - K @ (H @ mu_f - synth_ys[k])
     new_P = P_f - K @ H @ P_f
-
     kalman_mus += [new_mu]
     kalman_Ps += [new_P]
+
 kalman_zs = [mu[0] for mu in kalman_mus]
 kalman_zts = [mu[1] for mu in kalman_mus]
 
 
-# plot kalman reconstructions
+# plot kalman reconstruction of z
+plt.figure(figsize=(24, 4))
 plt.scatter(times, true_zs, s=1, c=(0, 0, 1))
 plt.scatter(times, kalman_zs, s=1, c=(0, 1, 0))
 plt.legend(['True z', 'Kalman reconstruction'], markerscale=4)
 plt.show()
+
+
+# plot kalman reconstruction of z_t
+plt.figure(figsize=(24, 4))
 plt.scatter(times, true_zts, s=1, c=(1, 0, 0))
 plt.scatter(times, kalman_zts, s=1, c=(0, 1, 0))
 plt.legend(['True dz/dt', 'Kalman reconstruction'], markerscale=4)
@@ -84,9 +97,13 @@ plt.show()
 # plot kalman gain components
 K0s = [K[0] for K in kalman_gains]
 K1s = [K[1] for K in kalman_gains]
+
+plt.figure(figsize=(12, 6))
 plt.scatter(times[1:], K0s, s=1, c='#ff6699')
 plt.legend(['First component of Kalman gain'], markerscale=4)
 plt.show()
+
+plt.figure(figsize=(12, 6))
 plt.scatter(times[1:], K1s, s=1, c='#ff6699')
 plt.legend(['Second component of Kalman gain'], markerscale=4)
 plt.show()
@@ -94,8 +111,10 @@ plt.show()
 
 # generate and plots RMSEs and traces of analysis covariances
 RMSEs = [np.sqrt(0.5*((true_xs[k][0] - kalman_mus[k][0])**2
-             + (true_xs[k][1] - kalman_mus[k][1])**2))
-        for k in range(T+1)]
+                      + (true_xs[k][1] - kalman_mus[k][1])**2))
+         for k in range(T+1)]
+
+plt.figure(figsize=(12, 6))
 plt.scatter(times, RMSEs, s=1, c='#ff6699')
 cov_traces = [np.sqrt(0.5 * np.trace(P)) for P in kalman_Ps]
 plt.scatter(times, cov_traces, s=1, c='#42f4ce')
