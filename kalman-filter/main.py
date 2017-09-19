@@ -20,22 +20,31 @@ M = I + dt * A                   # forecasting matrix
 
 
 # generate numerical solution and plot
-times = [0 + k * dt for k in range(T+1)]
+times = [0 + k * dt for k in range(12*T+1)]
 true_xs = [x0]
-for k in range(T):
+for k in range(12*T):
     true_xs += [M @ true_xs[-1]]
 true_zs = [x[0] for x in true_xs]
 true_zts = [x[1] for x in true_xs]
 plt.scatter(times, true_zs, s=1, c=(0, 0, 1))
 plt.scatter(times, true_zts, s=1, c=(1, 0, 0))
+plt.legend(['z', 'dz/dt'], markerscale=4)
 plt.show()
+plt.figure(figsize=(50, 30))
+
+
+# time interval was long to illustrate dampening; cut back
+times = times[:T+1]
+true_xs = true_xs[:T+1]
+true_zs = true_zs[:T+1]
+true_zts = true_zts[:T+1]
 
 
 # generate synthetic data and plot
 synth_ys = [H @ x + np.random.normal(0, np.sqrt(R)) for x in true_xs]
 plt.scatter(times, synth_ys, s=1, c=(0, 1, 0))
 plt.scatter(times, true_zs, s=1, c=(0, 0, 1))
-plt.legend(['Synthetic z', 'True z'])
+plt.legend(['Synthetic z', 'True z'], markerscale=4)
 plt.show()
 
 
@@ -64,11 +73,11 @@ kalman_zts = [mu[1] for mu in kalman_mus]
 # plot kalman reconstructions
 plt.scatter(times, true_zs, s=1, c=(0, 0, 1))
 plt.scatter(times, kalman_zs, s=1, c=(0, 1, 0))
-plt.legend(['True z', 'Kalman reconstruction'])
+plt.legend(['True z', 'Kalman reconstruction'], markerscale=4)
 plt.show()
 plt.scatter(times, true_zts, s=1, c=(1, 0, 0))
 plt.scatter(times, kalman_zts, s=1, c=(0, 1, 0))
-plt.legend(['True dz/dt', 'Kalman reconstruction'])
+plt.legend(['True dz/dt', 'Kalman reconstruction'], markerscale=4)
 plt.show()
 
 
@@ -76,22 +85,19 @@ plt.show()
 K0s = [K[0] for K in kalman_gains]
 K1s = [K[1] for K in kalman_gains]
 plt.scatter(times[1:], K0s, s=1, c='#ff6699')
-plt.legend(['First component of Kalman gain'])
+plt.legend(['First component of Kalman gain'], markerscale=4)
 plt.show()
 plt.scatter(times[1:], K1s, s=1, c='#ff6699')
-plt.legend(['Second component of Kalman gain'])
+plt.legend(['Second component of Kalman gain'], markerscale=4)
 plt.show()
 
 
-# generate and plots MSEs and traces of analysis covariances
-MSEs = [0.5*((true_xs[k][0] - kalman_mus[k][0])**2
-             + (true_xs[k][1] - kalman_mus[k][1])**2)
+# generate and plots RMSEs and traces of analysis covariances
+RMSEs = [np.sqrt(0.5*((true_xs[k][0] - kalman_mus[k][0])**2
+             + (true_xs[k][1] - kalman_mus[k][1])**2))
         for k in range(T+1)]
-plt.scatter(times, MSEs, s=1, c='#ff6699')
-plt.legend(['MSE_k'])
-plt.show()
-
-cov_traces = [0.5 * np.trace(P) for P in kalman_Ps]
-plt.scatter(times, cov_traces, s=1, c='#ff6699')
-plt.legend(['Normalized trace of analysis covariance'])
+plt.scatter(times, RMSEs, s=1, c='#ff6699')
+cov_traces = [np.sqrt(0.5 * np.trace(P)) for P in kalman_Ps]
+plt.scatter(times, cov_traces, s=1, c='#42f4ce')
+plt.legend(['RMSE', 'Normalized trace of analysis covariance'], markerscale=4)
 plt.show()
