@@ -21,7 +21,7 @@ M = I + dt * A                   # forecasting matrix
 
 # generate numerical solution and plot
 # to illustrate dampening, stack n plots of width T
-n = 30
+n = 2
 times = [0 + k * dt for k in range(n*T+1)]
 true_xs = [x0]
 for k in range(n*T):
@@ -64,17 +64,17 @@ for k in range(T):
 
     # forecasting step
     mu_f = M @ mu_last
-    P_f = A @ P_last @ A.T
+    P_f = M @ P_last @ M.T
     K = P_f @ H.T @ np.linalg.inv(R + H @ P_f @ H.T)
     kalman_gains += [K]
 
-    # form new analysis mean and covariance and append to list
+    # form new analysis mean and covariance and append to lists
     new_mu = mu_f - K @ (H @ mu_f - synth_ys[k])
-    new_P = P_f - K @ H @ P_f
+    new_P = P_f - K @ (H @ P_f)
     kalman_mus += [new_mu]
     kalman_Ps += [new_P]
 
-kalman_zs = [mu[0] for mu in kalman_mus]
+kalman_zs  = [mu[0] for mu in kalman_mus]
 kalman_zts = [mu[1] for mu in kalman_mus]
 
 
