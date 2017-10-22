@@ -71,22 +71,24 @@ plt.show()
 
 # generate synthetic data
 # only observe every 0.1 seconds, so keep only every nth state, n=0.1/h
+states = np.load("true-states.npy")
 obs = np.array(states[::int(0.1//h)])
 # ???so I should use M^n later???
-# for each state, kill obs of even-numbered variables
+# # could multiply by H with 
+# H = np.array([np.eye(1, 40, i) for i in range(1, 40, 2)])
+# H = np.reshape(H, (20, 40))
+# R = np.identity(N//2)
+# # ... but just use numpy command?
+obs = list(map(lambda A: np.delete(A, range(0, N, 2)), obs))
+obs = np.array(obs)
 
-H = np.zeros(N)
-np.put(H, range(1, N, 2), 1)  # we observe odd-indexed variables
-R = np.identity(N)
 
 # this is inefficient; could flatten against 0s
 # but I want to write in terms of R
-np.random.seed(2017) 
-epsilon = np.array([np.random.multivariate_normal(np.zeros(N), R)
+np.random.seed(2017)
+epsilon = np.array([np.random.multivariate_normal(np.zeros(N//2), R)
                     for y in obs])
 obs = obs + epsilon
-for y in obs:                    # maybe i don't want to do this??
-    np.put(y, range(0, N, 2), 0)
 np.save("synthetic-obs", obs)
 
 
@@ -94,8 +96,9 @@ np.save("synthetic-obs", obs)
 T = 1000
 h = 0.005
 x0 = np.load("starting-data.npy")
-states = L96(x0, T, h)  # runs in 85s on my laptop
+cProfile.run('states = L96(x0, T, h)')  # runs in 85s on my laptop
+np.save("large-run-for-sampling", states)
 
-Ne = 40
+Ne = 500
 ens = [states[np.random.randint(len(states))] for i in range(Ne)]
-np.save("initial-ens", ens)
+np.save("initial-ens-500", ens)
