@@ -5,9 +5,11 @@ import cProfile
 # global parameters
 N = 40             # number of state variables
 F = 8              # lorenz forcing term
+h = 0.01           # RK time step
 
 
 # functions defining lorenz system
+# input: vector of shape N
 def f(A):
     out = [(A[(i+1) % N] - A[(i-2) % N]) * A[(i-1) % N] - A[i] + F
            for i in range(len(A))]
@@ -22,83 +24,113 @@ def RK_step(x, h):
     return x + (h/6)*(k1 + 2*k2 + 2*k3 + k4)
 
 
-# standard_basis = []
-# for i in range(N):
-#     e = np.zeros(N)
-#     np.put(e, i, 1)
-#     standard_basis += [e]
-
-
 # for times in RK_times (1-D array), solve system with initial state x0
 # returns an array of shape (len(RK_times), N), N = dim x0
 def L96(x0, T, h):
     RK_times = np.arange(h, T, h)  # number of time steps
     states = [x0]
-    for tn in RK_times:
-        xn = states[-1]
-        states += [RK_step(xn, h)]
+    for t in RK_times:
+        x = states[-1]
+        states += [RK_step(x, h)]
     return states
 
 
 # get good initial position near attractor
-T = 100                   # length of simulation
-h = 0.005                 # time step
-
+t0 = time.time()
+T = 5000                   # propagate for T seconds
 np.random.seed(2017)
 x0 = np.array([np.random.normal() for i in range(N)])
 states = L96(x0, T, h)
-np.save("starting-data", states[-1])
+np.save("initial-position", states[-1])
+tf = time.time()
+print("Initial position . Time: {0}".format(tf-t0))
 
 
 # get true states to generate synthetic data
 T = 10
-h = 0.005                         # time step
-x0 = np.load("starting-data.npy")
-cProfile.run('states = L96(x0, T, h)')
+t0 = time.time()
+x0 = np.load("initial-position.npy")
+# np.random.seed(2017)
+# x0 = np.array([np.random.normal() for i in range(N)])
+states = L96(x0, T, h)
 states = np.array(states)
-np.save("true-states", states)
+np.save("./true-states/true-states-T{0}".format(T), states)
+tf = time.time()
+print("True states generated. Time: {0}".format(tf-t0))
 
-# plot true states
+# # plot true first three true states
+# import matplotlib.pyplot as plt
+# from mpl_toolkits.mplot3d import Axes3D
+# fig = plt.figure()
+# ax = fig.gca(projection='3d')
+# ax.plot(states[:, 0], states[:, 1], states[:, 2])
+# ax.set_xlabel('$x_1$')
+# ax.set_ylabel('$x_2$')
+# ax.set_zlabel('$x_3$')
+# plt.show()
+
+# plot true state of i-th variable
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+i = 1
+states = np.load("./true-states/true-states-T{0}.npy".format(T))
 fig = plt.figure()
-ax = fig.gca(projection='3d')
-ax.plot(states[:, 0], states[:, 1], states[:, 2])
-ax.set_xlabel('$x_1$')
-ax.set_ylabel('$x_2$')
-ax.set_zlabel('$x_3$')
+# ax = fig.gca(projection='3d')
+times = np.arange(0, T, h)
+plt.plot(times, states[:, i-1])
+# plt.set_xlabel('$x_{0}$'.format(i))
 plt.show()
 
+
 # generate synthetic data
-# only observe every 0.1 seconds, so keep only every nth state, n=0.1/h
-states = np.load("true-states.npy")
-obs = np.array(states[::int(0.1//h)])
-# ???so I should use M^n later???
-# # could multiply by H with 
-# H = np.array([np.eye(1, 40, i) for i in range(1, 40, 2)])
-# H = np.reshape(H, (20, 40))
-# R = np.identity(N//2)
-# # ... but just use numpy command?
+# only observe every obs_gap seconds,
+# so keep only every nth state, n=0.1/h
+t0 = time.time()
+obs_gap = 0.05
+n = int(obs_gap // h)
+states = np.load("./true-states/true-states-T{0}.npy".format(T))
+obs = np.array(states[::n])
 obs = list(map(lambda A: np.delete(A, range(0, N, 2)), obs))
 obs = np.array(obs)
-
-
 # this is inefficient; could flatten against 0s
 # but I want to write in terms of R
-np.random.seed(2017)
+np.random.seed(2016)
+R = np.identity(N//2)
 epsilon = np.array([np.random.multivariate_normal(np.zeros(N//2), R)
                     for y in obs])
 obs = obs + epsilon
-np.save("synthetic-obs", obs)
+np.save("./synthetic-observations/synthetic-obs-T{0}".format(T), obs)
+tf = time.time()
+print("Synthetic data generated. Time: {0}".format(tf-t0))
 
 
 # generate initial ensemble
+t0 = time.time()
 T = 1000
-h = 0.005
-x0 = np.load("starting-data.npy")
-cProfile.run('states = L96(x0, T, h)')  # runs in 85s on my laptop
+x0 = np.load("initial-position.npy")
+states = L96(x0, T, h)  # runs in 85s on my laptop
 np.save("large-run-for-sampling", states)
+
+Ne = 20
+ens = [states[np.random.randint(len(states))] for i in range(Ne)]
+np.save("./initial-ensembles/initial-ens-20", ens)
+
+Ne = 40
+ens = [states[np.random.randint(len(states))] for i in range(Ne)]
+np.save("./initial-ensembles/initial-ens-40", ens)
+
+Ne = 100
+ens = [states[np.random.randint(len(states))] for i in range(Ne)]
+np.save("./initial-ensembles/initial-ens-100", ens)
+
+Ne = 200
+ens = [states[np.random.randint(len(states))] for i in range(Ne)]
+np.save("./initial-ensembles/initial-ens-200", ens)
 
 Ne = 500
 ens = [states[np.random.randint(len(states))] for i in range(Ne)]
-np.save("initial-ens-500", ens)
+np.save("./initial-ensembles/initial-ens-500", ens)
+
+tf = time.time()
+print("Inital ensembles generated. Time: {0}".format(tf-t0))
+
