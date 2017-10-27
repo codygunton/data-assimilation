@@ -5,9 +5,9 @@ import sys
 import multiprocessing as mp
 
 # specify simultation length. options: T = 10, 20, 50, 100, 500, 1000
-T = 10
+T = 20
 # specify ensemble size. options: 20, 40, 100, 200, 500
-Ne = 20
+Ne = 100
 
 
 # load states and initial ensemble
@@ -125,17 +125,17 @@ def main(alpha, r, log_name):
 
     spreads = [np.sqrt(np.trace(P)/N) for P in P_as]
 
-    # show RMSEs
-    plt.figure(figsize=(12, 6))
-    times = range(len(RMSEs))
-    plt.scatter(times, RMSEs, s=10, c='#ff6699')
-    plt.show()
+    # # show RMSEs
+    # plt.figure(figsize=(12, 6))
+    # times = range(len(RMSEs))
+    # plt.scatter(times, RMSEs, s=10, c='#ff6699')
+    # plt.show()
 
-    # show spreads
-    plt.figure(figsize=(12, 6))
-    times = range(len(spreads))
-    plt.scatter(times, spreads, s=10, c='#ff6699')
-    plt.show()
+    # # show spreads
+    # plt.figure(figsize=(12, 6))
+    # times = range(len(spreads))
+    # plt.scatter(times, spreads, s=10, c='#ff6699')
+    # plt.show()
 
     # discard data points from spin-up time
     RMSEs = RMSEs[len(obs)//2:]
@@ -163,11 +163,11 @@ def iterate_main(param_set, log_name, q):  # q is instance of mp.Queue()
     q.put(RMSE_info)
 
 
-# ensembles, mu_as, P_as, RMSEs, spreads = main(0.2, 5, 'whatever')
+ensembles, mu_as, P_as, RMSEs, spreads = main(0.16, 5.5, 'whatever')
 
 
 if __name__ == "__main__":
-    alpha_lower = 0.02
+    alpha_lower = 0
     alpha_upper = 0.5
     alpha_step = 0.02
     r_lower = 1
@@ -178,7 +178,7 @@ if __name__ == "__main__":
               np.arange(alpha_lower, alpha_upper, alpha_step)
               for r in
               np.arange(r_lower, r_upper, r_step)]
-    params = params[:3]
+
     # set up log
     log_name = 'po-T{0}-Ne{1}'.format(T, Ne)
     log_file = open(log_name, 'w')
