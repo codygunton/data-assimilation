@@ -122,17 +122,17 @@ def main(alpha, r, log_name):
 
     spreads = [np.sqrt(np.trace(P)/N) for P in P_as]
 
-    # # show RMSEs
-    # plt.figure(figsize=(12, 6))
-    # times = range(len(RMSEs))
-    # plt.scatter(times, RMSEs, s=10, c='#ff6699')
-    # plt.show()
+    # show RMSEs
+    plt.figure(figsize=(12, 6))
+    times = range(len(RMSEs))
+    plt.scatter(times, RMSEs, s=10, c='#ff6699')
+    plt.show()
 
-    # # show spreads
-    # plt.figure(figsize=(12, 6))
-    # times = range(len(spreads))
-    # plt.scatter(times, spreads, s=10, c='#ff6699')
-    # plt.show()
+    # show spreads
+    plt.figure(figsize=(12, 6))
+    times = range(len(spreads))
+    plt.scatter(times, spreads, s=10, c='#ff6699')
+    plt.show()
 
     # discard data points from spin-up time
     RMSEs = RMSEs[len(obs)//2:]
@@ -160,7 +160,7 @@ def iterate_main(param_set, log_name, q):  # q is instance of mp.Queue()
     q.put(RMSE_info)
 
 
-ensembles, mu_as, P_as, RMSEs, spreads = main(0.16, 5.5, 'whatever')
+ensembles, mu_as, P_as, RMSEs, spreads = main(0.16, 5.5, 'log')
 
 
 if __name__ == "__main__":
