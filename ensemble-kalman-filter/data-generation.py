@@ -138,4 +138,3 @@ np.save("./initial-ensembles/initial-ens-500", ens)
 
 tf = time.time()
 print("Inital ensembles generated. Time: {0}".format(tf-t0))
-
