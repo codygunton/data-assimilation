@@ -82,7 +82,7 @@ def generate_states(T):
     # plt.show()
 
 
-def generate_data(T)
+def generate_data(T):
     # generate synthetic data
     # only observe every obs_gap seconds,
     # so keep only every nth state, n=0.1/h
